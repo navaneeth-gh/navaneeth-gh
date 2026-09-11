@@ -125,3 +125,86 @@ From: WakaTime setup needed — see notes below
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,25&height=120&section=footer" />
 
 </div>
+# Setup: `.github/workflows/` files needed
+
+Create these in the repo named exactly your GitHub username (e.g. `octocat/octocat`).
+
+---
+
+## 1. Snake animation — `.github/workflows/snake.yml`
+```yaml
+name: generate snake
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Platane/snk@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            dist/github-contribution-grid-snake-dark.svg?palette=github-dark
+      - uses: crazy-max/ghaction-github-pages@v3
+        with:
+          target_branch: output
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## 2. 3D contribution calendar — `.github/workflows/profile-3d.yml`
+```yaml
+name: GitHub-Profile-3D-Contrib
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: yoshi389111/github-profile-3d-contrib@0.7.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: ${{ github.repository_owner }}
+      - name: Commit & Push
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -A .
+          git commit -m "generated" || exit 0
+          git push
+```
+Then swap `profile-night-green.svg` in the README for whichever style you like — options are `profile-green-animate.svg`, `profile-season.svg`, `profile-night-view.svg`, `profile-night-rainbow.svg`, `profile-gitblock.svg`, all inside `profile-3d-contrib/` on the `output` branch.
+
+## 3. WakaTime hours — `.github/workflows/waka.yml`
+Requires a free WakaTime account (tracks coding time via editor plugin) and a `WAKATIME_API_KEY` secret.
+```yaml
+name: Waka Readme
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: athul/waka-readme@master
+        with:
+          WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+```
+If you don't code with a WakaTime-tracked editor day to day, delete that whole section from the README instead — an empty/broken stat block looks worse than no stat block.
+
+## 4. Spotify widget
+No Action needed — just get your UID by logging in at spotify-github-profile.vercel.app and swap `YOUR_SPOTIFY_UID` in the README.
+
+---
+
+**Order of operations:** push the README first (the plain widgets like stats/trophies/streak work immediately), then add workflows one at a time and manually trigger each once via the Actions tab (`Run workflow`) so the SVGs generate before you rely on the auto-schedule.
